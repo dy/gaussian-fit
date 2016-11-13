@@ -68,7 +68,7 @@ css(`
 let autoButton = document.body.appendChild(document.createElement('button'))
 autoButton.classList.add('auto')
 autoButton.innerHTML = 'autofit'
-autoButton.onclick = (e => autoFit())
+// autoButton.onclick = (e => autoFit())
 
 let link = document.body.appendChild(document.createElement('a'))
 link.classList.add('link')
@@ -79,6 +79,9 @@ link.href='https://github.com/dfcreative/gaussian-fit'
 
 document.addEventListener('click', e => {
 	addComponent(e.clientX, e.clientY)
+})
+document.body.addEventListener('touchstart', e => {
+	addComponent(e.touches[0].clientX, e.touches[0].clientY)
 })
 
 
@@ -155,7 +158,7 @@ function update (samples, components) {
 	let sumData = Array(N).fill(0).map((v, i) => {
 		let sum = 0;
 		components.forEach((component, c, components) => {
-			sum += component.weight * Math.sqrt(τ*component.variance) * norm(i/N, component.mean, component.variance);
+			sum += component.weight * norm(i/N, component.mean, component.variance);
 		});
 		if (sum > maxAmp) maxAmp = sum;
 		return sum;
@@ -165,9 +168,9 @@ function update (samples, components) {
 
 	components.forEach((component, c, components) => {
 		let samples = Array(N)
-		let coef = component.weight * Math.sqrt(τ*component.variance)
+		let coef = component.weight / maxAmp
 		for (let i = 0; i < N; i++) {
-			samples[i] = coef * norm(i/N, component.mean, component.variance) / maxAmp
+			samples[i] = coef * norm(i/N, component.mean, component.variance)
 		}
 
 		render(samples, colors[(c*17) % colors.length]);
@@ -183,7 +186,7 @@ function generateData (n) {
 	let components = Array(c).fill(null).map(c => [
 		Math.random() + .15,
 		Math.random() * .75 + .15,
-		Math.random()*.005 + 0.001
+		Math.random()*.005 + 0.0005
 	])
 
 	//redistribute means to equal 1
@@ -218,7 +221,6 @@ function autoFit () {
 function addComponent (l, t) {
 	let x = l/window.innerWidth
 	let y = 1 - t/window.innerHeight
-
 	components.push({weight: y, mean: x, variance: .01})
 }
 
