@@ -4739,7 +4739,7 @@ function generateData (n) {
 		var x = i/samples.length;
 		return components.reduce(function (prev, curr) {
 			return prev + curr[0] * norm(x, curr[1], curr[2])
-		}, 0) + Math.random()*.1;
+		}, 0) + Math.random()*.01;
 	});
 
 	samples = normalize(samples)
