@@ -4613,7 +4613,7 @@ css("\n\tbody {\n\t\twidth: 100vw;\n\t\theight: 100vh;\n\t\toverflow: hidden;\n\
 var autoButton = document.body.appendChild(document.createElement('button'))
 autoButton.classList.add('auto')
 autoButton.innerHTML = 'autofit'
-autoButton.onclick = (function (e) { return autoFit(); })
+// autoButton.onclick = (e => autoFit())
 
 var link = document.body.appendChild(document.createElement('a'))
 link.classList.add('link')
@@ -4624,6 +4624,9 @@ link.href='https://github.com/dfcreative/gaussian-fit'
 
 document.addEventListener('click', function (e) {
 	addComponent(e.clientX, e.clientY)
+})
+document.body.addEventListener('touchstart', function (e) {
+	addComponent(e.touches[0].clientX, e.touches[0].clientY)
 })
 
 
@@ -4695,7 +4698,7 @@ function update (samples, components) {
 	var sumData = Array(N).fill(0).map(function (v, i) {
 		var sum = 0;
 		components.forEach(function (component, c, components) {
-			sum += component.weight * Math.sqrt(τ*component.variance) * norm(i/N, component.mean, component.variance);
+			sum += component.weight * norm(i/N, component.mean, component.variance);
 		});
 		if (sum > maxAmp) { maxAmp = sum; }
 		return sum;
@@ -4705,9 +4708,9 @@ function update (samples, components) {
 
 	components.forEach(function (component, c, components) {
 		var samples = Array(N)
-		var coef = component.weight * Math.sqrt(τ*component.variance)
+		var coef = component.weight / maxAmp
 		for (var i = 0; i < N; i++) {
-			samples[i] = coef * norm(i/N, component.mean, component.variance) / maxAmp
+			samples[i] = coef * norm(i/N, component.mean, component.variance)
 		}
 
 		render(samples, colors[(c*17) % colors.length]);
@@ -4723,7 +4726,7 @@ function generateData (n) {
 	var components = Array(c).fill(null).map(function (c) { return [
 		Math.random() + .15,
 		Math.random() * .75 + .15,
-		Math.random()*.005 + 0.001
+		Math.random()*.005 + 0.0005
 	]; })
 
 	//redistribute means to equal 1
@@ -4758,7 +4761,6 @@ function autoFit () {
 function addComponent (l, t) {
 	var x = l/window.innerWidth
 	var y = 1 - t/window.innerHeight
-
 	components.push({weight: y, mean: x, variance: .01})
 }
 
