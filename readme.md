@@ -23,7 +23,10 @@ let how = {
 	maxNumber: 100,
 
 	//max number of iterations
-	maxIterations: 200
+	maxIterations: 200,
+
+	//min difference of likelihood
+	tolerance: 1e-5,
 }
 
 let components = fit(data, how)

@@ -5,7 +5,8 @@ const css = require('insert-styles')
 const createPlot = require('../gl-component')
 const colormap = require('colormap')
 const norm = require('normal-pdf')
-
+const τ = Math.PI * 2;
+const raf = require('raf')
 
 //UI
 css(`
@@ -17,6 +18,7 @@ css(`
 	}
 
 	.auto {
+		display: none;
 		cursor: pointer;
 		z-index: 1;
 		position: absolute;
@@ -37,6 +39,29 @@ css(`
 	.auto:hover, .auto:active {
 		border-bottom-color: rgba(0,0,0,.9);
 	}
+
+	.link {
+		text-decoration: none;
+		cursor: pointer;
+		z-index: 1;
+		position: absolute;
+		top: 1rem;
+		left: 1rem;
+		font-size: .9rem;
+		letter-spacing: .05ex;
+		font-weight: 700;
+		-webkit-appearance: none;
+		appearance: none;
+		background: none;
+		text-transform: uppercase;
+		border: none;
+		padding: 0;
+		color: rgb(0,0,0);
+		border-bottom: 2px solid rgba(0,0,0,.15);
+	}
+	.link:hover, .link:active {
+		border-bottom-color: rgba(0,0,0,.9);
+	}
 `)
 
 
@@ -44,6 +69,12 @@ let autoButton = document.body.appendChild(document.createElement('button'))
 autoButton.classList.add('auto')
 autoButton.innerHTML = 'autofit'
 autoButton.onclick = (e => autoFit())
+
+let link = document.body.appendChild(document.createElement('a'))
+link.classList.add('link')
+link.innerHTML = 'EM'
+link.title = 'Expectation maximization on github'
+link.href='https://github.com/dfcreative/gaussian-fit'
 
 
 document.addEventListener('click', e => {
@@ -53,14 +84,13 @@ document.addEventListener('click', e => {
 
 //main render plot
 let plot = createPlot({
-	context: {antialias: true},
 	autostart: false,
 	draw: (gl, vp, data) => {
 		if (!data) return;
 		let {points, color} = data;
 
 		plot.setAttribute('position', points);
-		plot.setUniform('color', data.color);
+		plot.setUniform('color', color);
 		gl.drawArrays(gl.LINE_STRIP, 0, points.length/2);
 	},
 	vert: `
@@ -88,41 +118,82 @@ let plot = createPlot({
 //default color set
 let colors = colormap({
 	colormap: 'rainbow-soft',
-	nshades: 11,
+	nshades: 100,
 	format: 'rgb'
-})
+}).map(([r,g,b,a]) => [r/255,g/255,b/255,a])
 
 
 //get data
 let N = 128;
 let samples = generateData(N);
 
-//render data
-render(samples, [0,0,0,1])
-
-//render zero line
-render([0, 0], [.95,.95,.95,1])
-
 //initialize single-fit
 let components = [{weight: .5, mean: .5, variance: .1}]
-components = fit(samples, components)
 
-//render components
-render(sampleComponent(components[0]), colors[0]);
+raf(function frame () {
+	components = fit(samples, {
+		components: components,
+		maxIterations: 1
+	})
 
+	update(samples, components)
 
+	raf(frame)
+})
 
 
 
 //API
+function update (samples, components) {
+	plot.clear()
+
+	//render data
+	render(samples, [0,0,0,1])
+
+	let N = 512
+	let maxAmp = 0;
+	let sumData = Array(N).fill(0).map((v, i) => {
+		let sum = 0;
+		components.forEach((component, c, components) => {
+			sum += component.weight * Math.sqrt(τ*component.variance) * norm(i/N, component.mean, component.variance);
+		});
+		if (sum > maxAmp) maxAmp = sum;
+		return sum;
+	});
+	sumData = normalize(sumData);
+	render(sumData, [.75, .75, .75, 1]);
+
+	components.forEach((component, c, components) => {
+		let samples = Array(N)
+		let coef = component.weight * Math.sqrt(τ*component.variance)
+		for (let i = 0; i < N; i++) {
+			samples[i] = coef * norm(i/N, component.mean, component.variance) / maxAmp
+		}
+
+		render(samples, colors[(c*17) % colors.length]);
+	})
+
+	return components
+}
+
+
 function generateData (n) {
-	let c = Math.floor(Math.random() * 100);
+	let c = Math.floor(Math.random() * 3 + 2);
 
 	let components = Array(c).fill(null).map(c => [
-		Math.random()*.9 + .1,
-		Math.random(),
-		Math.random()*.005
+		Math.random() + .15,
+		Math.random() * .75 + .15,
+		Math.random()*.005 + 0.001
 	])
+
+	//redistribute means to equal 1
+	let sum = components.reduce((prev, curr) => {
+		return prev + curr[0]/Math.sqrt(τ*curr[2])
+	}, 0)
+	components = components.map(c => {
+		c[0] /= sum
+		return c;
+	})
 
 	let samples = Array(n).fill(0).map((sample, i, samples) => {
 		let x = i/samples.length;
@@ -131,7 +202,9 @@ function generateData (n) {
 		}, 0) + Math.random()*.1;
 	});
 
-	return normalize(samples);
+	samples = normalize(samples)
+
+	return samples
 }
 
 
@@ -142,12 +215,11 @@ function autoFit () {
 
 
 
-function addComponent (x, y) {
-	colors = colormap({
-		colormap: 'rainbow-soft',
-		nshades: components.length,
-		format: 'rgb'
-	})
+function addComponent (l, t) {
+	let x = l/window.innerWidth
+	let y = 1 - t/window.innerHeight
+
+	components.push({weight: y, mean: x, variance: .01})
 }
 
 
@@ -158,8 +230,6 @@ function normalize (samples) {
 
 
 function render (samples, color) {
-	samples = normalize(samples)
-
 	//build points
 	let points = [];
 	for (let i = 0; i < samples.length; i++) {
@@ -172,54 +242,3 @@ function render (samples, color) {
 }
 
 
-function sampleComponent(component) {
-	let N = 1024;
-	let samples = Array(N)
-	for (let i = 0; i < N; i++) {
-		samples[i] = component.weight * norm(i/N, component.mean, component.variance)
-	}
-	return samples
-}
-
-
-
-
-
-//rendering normalized by sum of peaks
-// 	let maxAmp = 0;
-// 	let sumData = Array(1024).fill(0).map((v, i, samples) => {
-// 		let x = i/samples.length;
-// 		let sum = 0;
-// 		for (let c = 0; c < count; c++) {
-// 			sum += norm(x, φ[c]/Math.sqrt(τ*υ[c]), μ[c], υ[c]);
-// 		}
-// 		if (sum > maxAmp) maxAmp = sum;
-// 		return sum;
-// 	});
-
-// 	//draw sum
-// 	let points = [];
-// 	for (let i = 0; i < sumData.length; i++) {
-// 		points.push(2 * i/sumData.length - 1);
-// 		points.push(sumData[i]/maxAmp);
-// 	}
-// 	plot.render({samples: points, color: [.5,.5,.5,step/steps]});
-
-
-// 	//draw means drift
-// 	for (let c = 0; c < count; c++) {
-
-// 		let color = colors[c];
-// 		color[3] = .0 + 1*step/steps;
-
-// 		//means
-// 		let points = [];
-// 		points.push(μ[c]*2-1, 0);
-// 		points.push(μ[c]*2-1, φ[c]/Math.sqrt(τ*υ[c])/maxAmp);
-// 		plot.render({samples: points, color: color});
-
-
-// 		//component
-// 		// drawGaussian(φ[c]/Math.sqrt(τ*σ[c]*σ[c])/maxAmp, μ[c], υ[c], color);
-// 	}
-// }

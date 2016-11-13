@@ -2,7 +2,7 @@
 
 'use strict';
 
-const n = require('normal-pdf');
+const norm = require('normal-pdf');
 
 
 module.exports = fit;
@@ -45,8 +45,22 @@ function fit (samples, opts) {
 		return v;
 	});
 
+	if (opts.maxNumber == null) opts.maxNumber = 100;
+	if (opts.maxIterations == null) opts.maxIterations = 100;
+	if (opts.tolerance == null) opts.tolerance = 1e-5;
+
 	//optimize components
-	components = optimize(samples, components);
+	let lastLikelihood = -Infinity;
+	for (let i = 0, n = opts.maxIterations; i < n; i++) {
+		let lh = likelihood(samples, components)
+		if (Math.abs(lastLikelihood - lh) < opts.tolerance) {
+			break
+		}
+
+		components = optimize(samples, components)
+
+		lastLikelihood = lh;
+	}
 
 	if (!detectComponents) return components;
 
@@ -54,25 +68,19 @@ function fit (samples, opts) {
 	// let max = max(error(samples, components));
 
 
-	// if (opts.maxNumber) opts.maxNumber = 100;
-	// if (opts.maxIterations) opts.maxIterations = 100;
 
 	// //for every component iterate till converged
 	// let diff = Infinity;
-	// for (let i = 0; i < opts.maxIterations && diff > logLikelihoodTol; i++) {
-	// 	components = optimize(samples, components);
-	// 	diff = Math.abs(logLikelihood - temp);
-	// 	logLikelihood = temp;
-	// }
 
 
 	return components;
 }
 
 
-//iteration of em algorithm
+//single iteration of em algorithm
 function optimize (samples, components) {
 	let membership = memberships.has(samples) ? memberships.get(samples) : memberships.set(samples, Array(components.length*samples.length)).get(samples);
+
 
 	//E-step: ask every sample for preference over existing components
 	for (let i = 0; i < samples.length; i++) {
@@ -84,7 +92,7 @@ function optimize (samples, components) {
 		let Σρ = 0;
 		for (let c = 0; c < components.length; c++) {
 			let {weight, mean, variance} = components[c];
-			ρ[c] = weight * n(x, mean, variance);
+			ρ[c] = weight * norm(x, mean, variance);
 			Σρ += ρ[c];
 		}
 
@@ -135,7 +143,7 @@ function likelihood (samples, components) {
 		p = 0;
 		for (let c = 0; c < components.length; c++) {
 			let comp = components[c];
-			p += samples[i] * comp.weight * n(i/n, comp.mean, comp.variance);
+			p += samples[i] * comp.weight * norm(i/n, comp.mean, comp.variance);
 		}
 		if (p === 0) {
 			return -Infinity;
@@ -144,7 +152,7 @@ function likelihood (samples, components) {
 		}
 	}
 	return l;
-};
+}
 
 
 
