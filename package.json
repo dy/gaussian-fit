@@ -1,0 +1,35 @@
+{
+  "name": "gaussian-fit",
+  "version": "1.0.0",
+  "description": "Fit data with gaussian mixture by EM algorithm",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dfcreative/gaussian-fit.git"
+  },
+  "keywords": [
+    "EM",
+    "expectation",
+    "maximization",
+    "gaussian",
+    "mixture"
+  ],
+  "author": "ΔY <dfcreative@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dfcreative/gaussian-fit/issues"
+  },
+  "homepage": "https://github.com/dfcreative/gaussian-fit#readme",
+  "dependencies": {
+    "normal-pdf": "^1.0.0"
+  },
+  "devDependencies": {
+    "colormap": "^2.2.0",
+    "enable-mobile": "^1.0.6",
+    "gl-component": "^2.3.5",
+    "insert-styles": "^1.2.1"
+  }
+}
