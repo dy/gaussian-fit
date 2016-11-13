@@ -21,16 +21,18 @@ css(`
 		z-index: 1;
 		position: absolute;
 		bottom: 1rem;
-		right: 1rem;
-		font-size: .75rem;
-		letter-spacing: .1ex;
-		text-transform: uppercase;
-		font-weight: 100;
+		left: 50%;
+		transform: translateX(-50%);
+		font-size: .9rem;
+		letter-spacing: .05ex;
+		font-weight: 700;
 		-webkit-appearance: none;
+		appearance: none;
 		background: none;
+		text-transform: uppercase;
 		border: none;
 		padding: 0;
-		border-bottom: 1px solid rgba(0,0,0,.1);
+		border-bottom: 2px solid rgba(0,0,0,.1);
 	}
 	.auto:hover, .auto:active {
 		border-bottom-color: rgba(0,0,0,.9);
@@ -64,8 +66,7 @@ let plot = createPlot({
 	vert: `
 		attribute vec2 position;
 		void main () {
-			gl_PointSize = 2.;
-			gl_Position = vec4(position.x, position.y - .333, 0, 1);
+			gl_Position = vec4(position.x*2. - 1., position.y*2. - 1., 0, 1);
 		}
 	`,
 	frag: `
@@ -80,12 +81,37 @@ let plot = createPlot({
 })
 
 
+
+
+//init app
+
 //default color set
-// let colors = colormap({
-// 	colormap: 'rainbow-soft',
-// 	nshades: 100,
-// 	format: 'rgb'
-// })
+let colors = colormap({
+	colormap: 'rainbow-soft',
+	nshades: 11,
+	format: 'rgb'
+})
+
+
+//get data
+let N = 128;
+let samples = generateData(N);
+
+//render data
+render(samples, [0,0,0,1])
+
+//render zero line
+render([0, 0], [.95,.95,.95,1])
+
+//initialize single-fit
+let components = [{weight: .5, mean: .5, variance: .1}]
+components = fit(samples, components)
+
+//render components
+render(sampleComponent(components[0]), colors[0]);
+
+
+
 
 
 //API
@@ -102,10 +128,10 @@ function generateData (n) {
 		let x = i/samples.length;
 		return components.reduce((prev, curr) => {
 			return prev + curr[0] * norm(x, curr[1], curr[2])
-		}, 0) + Math.random()*.05;
+		}, 0) + Math.random()*.1;
 	});
 
-	render(samples)
+	return normalize(samples);
 }
 
 
@@ -117,31 +143,46 @@ function autoFit () {
 
 
 function addComponent (x, y) {
-
+	colors = colormap({
+		colormap: 'rainbow-soft',
+		nshades: components.length,
+		format: 'rgb'
+	})
 }
 
 
-function render (samples) {
-	//normalize samples
-	let maxV = samples.reduce((prev, curr) => Math.max(curr, prev));
-	samples = samples.map(v => v/maxV);
+function normalize (samples) {
+	let maxV = samples.reduce((prev, curr) => Math.max(curr, prev)) || 1;
+	return samples.map(v => v/maxV);
+}
+
+
+function render (samples, color) {
+	samples = normalize(samples)
 
 	//build points
 	let points = [];
 	for (let i = 0; i < samples.length; i++) {
-		points.push(2 * i/samples.length - 1);
+		points.push(i/(samples.length-1));
 		points.push(samples[i]);
 	}
 
 	//call render
-	plot.render({points: points, color: [0,0,0,1]});
+	plot.render({points: points, color: color });
+}
+
+
+function sampleComponent(component) {
+	let N = 1024;
+	let samples = Array(N)
+	for (let i = 0; i < N; i++) {
+		samples[i] = component.weight * norm(i/N, component.mean, component.variance)
+	}
+	return samples
 }
 
 
 
-//init app
-let N = 1024;
-generateData(N);
 
 
 //rendering normalized by sum of peaks

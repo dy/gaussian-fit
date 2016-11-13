@@ -18,13 +18,13 @@ let memberships = new WeakMap();
 function fit (samples, opts) {
 	opts = opts || {};
 
-	let detectComponents = opts.components;
-
 	if (Array.isArray(opts)) {
 		opts = {
 			components: opts
 		};
 	}
+
+	let detectComponents = !opts.components;
 
 	//initialize components
 	let components = typeof opts.components === 'number' ? Array(opts.components).fill(null) : opts.components || [];
@@ -46,26 +46,24 @@ function fit (samples, opts) {
 	});
 
 	//optimize components
-	optimize(samples, components);
+	components = optimize(samples, components);
 
 	if (!detectComponents) return components;
 
 	//find max error among samples, add new component at the point
-	let max = max(error(samples, components));
+	// let max = max(error(samples, components));
 
 
+	// if (opts.maxNumber) opts.maxNumber = 100;
+	// if (opts.maxIterations) opts.maxIterations = 100;
 
-
-	if (opts.maxNumber) opts.maxNumber = 100;
-	if (opts.maxIterations) opts.maxIterations = 100;
-
-	//for every component iterate till converged
-	let diff = Infinity;
-	for (let i = 0; i < opts.maxIterations && diff > logLikelihoodTol; i++) {
-		components = optimize(samples, components);
-		diff = Math.abs(logLikelihood - temp);
-		logLikelihood = temp;
-	}
+	// //for every component iterate till converged
+	// let diff = Infinity;
+	// for (let i = 0; i < opts.maxIterations && diff > logLikelihoodTol; i++) {
+	// 	components = optimize(samples, components);
+	// 	diff = Math.abs(logLikelihood - temp);
+	// 	logLikelihood = temp;
+	// }
 
 
 	return components;
@@ -115,14 +113,14 @@ function optimize (samples, components) {
 		for (let i = 0, n = samples.length; i < n; i++) {
 			Σμ += (i/n) * membership[i*components.length + c];
 		}
-		component.mean = Σμ/component.weight;
+		component.mean = Σμ/ω[c];
 
 		//get new variations as weighted by ratios stdev
 		let Συ = 0;
 		for (let i = 0, n = samples.length; i < n; i++) {
 			Συ += membership[i*components.length + c] * Math.pow(i/n - component.mean, 2);
 		}
-		component.variance = Math.max(Συ/component.weight, 1e-5);
+		component.variance = Math.max(Συ/ω[c], 1e-5);
 	})
 
 	return components;
