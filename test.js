@@ -199,7 +199,7 @@ function generateData (n) {
 		let x = i/samples.length;
 		return components.reduce((prev, curr) => {
 			return prev + curr[0] * norm(x, curr[1], curr[2])
-		}, 0) + Math.random()*.1;
+		}, 0) + Math.random()*.01;
 	});
 
 	samples = normalize(samples)
