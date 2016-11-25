@@ -43,3 +43,4 @@ Also see webgl version `gaussian-fit/gl` for better performance.
 ## Similar
 
 * [gaussianmixture](https://www.npmjs.com/package/gaussianMixture) — classical gaussian mixture for 1d samples
+* [gaussian-mixture-estimator](https://github.com/rreusser/gaussian-mixture-estimator) — nd samples data estimation
