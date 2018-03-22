@@ -22,7 +22,7 @@ let how = {
 	// TODO max number of components in case of auto-detection
 	maxNumber: 100,
 
-	// TODO max number of iterations
+	// max number of iterations
 	maxIterations: 200,
 
 	// TODO min difference of likelihood
