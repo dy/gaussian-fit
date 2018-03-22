@@ -11,34 +11,30 @@ Fit time/spectrum/other sequential data with a set of gaussians by [expectation-
 ```js
 const fit = require('gaussian-fit')
 
-//time/frequency/etc series
+// time/frequency/etc series
 let data = [0, .1, .2, .5, .2, .1, 0]
 
 let how = {
-	//predefined components, each one is object {weight, mean, variance}
-	//if null - the components will be detected automatically
+	// predefined components, each one is object {weight, mean, variance}
+	// TODO if null - the components will be detected automatically
 	components: null,
 
-	//max number of components in case of auto-detection
+	// TODO max number of components in case of auto-detection
 	maxNumber: 100,
 
-	//max number of iterations
+	// TODO max number of iterations
 	maxIterations: 200,
 
-	//min difference of likelihood
+	// TODO min difference of likelihood
 	tolerance: 1e-5,
 }
 
 let components = fit(data, how)
 
 components.forEach({weight, mean, variance} => {
-	//every component is an object with weight, mean and variance properties
+	// every component is an object with weight, mean and variance properties
 })
 ```
-
-### `fit(data, components?)`
-
-Also see webgl version `gaussian-fit/gl` for better performance.
 
 ## Similar
 
