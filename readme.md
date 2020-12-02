@@ -2,7 +2,7 @@
 
 Fit time/spectrum/other sequential data with a set of gaussians by [expectation-maximization](https://en.wikipedia.org/wiki/Expectation%E2%80%93maximization_algorithm) algoritm.
 
-[![gaussian-fit](https://raw.githubusercontent.com/dfcreative/gaussian-fit/gh-pages/preview.png "gaussian-fit")](http://dfcreative.github.io/gaussian-fit/)
+[![gaussian-fit](https://raw.githubusercontent.com/formant/gaussian-fit/gh-pages/preview.png "gaussian-fit")](http://dfcreative.github.io/gaussian-fit/)
 
 ## Usage
 
